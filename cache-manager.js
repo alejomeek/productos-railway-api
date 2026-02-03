@@ -16,46 +16,131 @@ function initFirebase() {
   db = admin.firestore();
 }
 
+async function loadEmbeddingsInBatches() {
+  const BATCH_SIZE = 1000;
+  const allEmbeddings = [];
+  let processedCount = 0;
+
+  console.log('[LOADING] Iniciando carga por batches...');
+
+  // Obtener IDs primero (más liviano)
+  const idsSnapshot = await db.collection('productos_embeddings')
+    .select('__name__')
+    .get();
+
+  const totalDocs = idsSnapshot.size;
+  console.log(`[LOADING] Total documentos a cargar: ${totalDocs}`);
+
+  // Cargar en batches
+  let lastDoc = null;
+
+  while (processedCount < totalDocs) {
+    let query = db.collection('productos_embeddings')
+      .orderBy('__name__')
+      .limit(BATCH_SIZE);
+
+    if (lastDoc) {
+      query = query.startAfter(lastDoc);
+    }
+
+    const snapshot = await query.get();
+
+    if (snapshot.empty) break;
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      allEmbeddings.push({
+        id: doc.id,
+        embedding: data.embedding
+      });
+    });
+
+    processedCount += snapshot.docs.length;
+    lastDoc = snapshot.docs[snapshot.docs.length - 1];
+
+    console.log(`[LOADING] Progreso: ${processedCount}/${totalDocs} embeddings (${Math.round(processedCount / totalDocs * 100)}%)`);
+
+    // Forzar garbage collection cada 2000 docs
+    if (processedCount % 2000 === 0 && global.gc) {
+      global.gc();
+    }
+
+    if (snapshot.docs.length < BATCH_SIZE) break;
+  }
+
+  console.log(`[OK] ${allEmbeddings.length} embeddings cargados en batches`);
+  return allEmbeddings;
+}
+
+async function loadProductsInBatches() {
+  const BATCH_SIZE = 1000;
+  const allProducts = {};
+  let processedCount = 0;
+
+  const idsSnapshot = await db.collection('productos')
+    .select('__name__')
+    .get();
+
+  const totalDocs = idsSnapshot.size;
+  console.log(`[LOADING] Total productos a cargar: ${totalDocs}`);
+
+  let lastDoc = null;
+
+  while (processedCount < totalDocs) {
+    let query = db.collection('productos')
+      .orderBy('__name__')
+      .limit(BATCH_SIZE);
+
+    if (lastDoc) {
+      query = query.startAfter(lastDoc);
+    }
+
+    const snapshot = await query.get();
+
+    if (snapshot.empty) break;
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      allProducts[doc.id] = {
+        id: doc.id,
+        name: data.name || '',
+        price: data.price || 0,
+        sku: data.sku || '',
+        stock: data.stock_quantity || 0,
+        image: data.image_url || '',
+        description: data.description || ''
+      };
+    });
+
+    processedCount += snapshot.docs.length;
+    lastDoc = snapshot.docs[snapshot.docs.length - 1];
+
+    console.log(`[LOADING] Progreso productos: ${processedCount}/${totalDocs} (${Math.round(processedCount / totalDocs * 100)}%)`);
+
+    if (processedCount % 2000 === 0 && global.gc) {
+      global.gc();
+    }
+
+    if (snapshot.docs.length < BATCH_SIZE) break;
+  }
+
+  console.log(`[OK] ${Object.keys(allProducts).length} productos cargados`);
+  return allProducts;
+}
+
 async function initializeCache() {
   console.log('[LOADING] Iniciando carga de datos desde Firebase...');
   const startTime = Date.now();
 
   if (!db) initFirebase();
 
-  // Cargar embeddings
+  // Cargar embeddings en batches
   console.log('  -> Cargando embeddings...');
-  const embeddingsSnapshot = await db.collection('productos_embeddings').get();
+  EMBEDDINGS_CACHE = await loadEmbeddingsInBatches();
 
-  EMBEDDINGS_CACHE = embeddingsSnapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      embedding: data.embedding,
-      text: data.text_embedded || ''
-    };
-  });
-
-  console.log(`  [OK] ${EMBEDDINGS_CACHE.length} embeddings cargados`);
-
-  // Cargar productos
+  // Cargar productos en batches
   console.log('  -> Cargando productos...');
-  const productsSnapshot = await db.collection('productos').get();
-
-  PRODUCTS_CACHE = {};
-  productsSnapshot.docs.forEach(doc => {
-    const data = doc.data();
-    PRODUCTS_CACHE[doc.id] = {
-      id: doc.id,
-      name: data.name || '',
-      price: data.price || 0,
-      sku: data.sku || '',
-      stock: data.stock_quantity || 0,
-      image: data.image_url || '',
-      description: data.description || ''
-    };
-  });
-
-  console.log(`  [OK] ${Object.keys(PRODUCTS_CACHE).length} productos cargados`);
+  PRODUCTS_CACHE = await loadProductsInBatches();
 
   CACHE_TIMESTAMP = new Date();
 
