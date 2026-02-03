@@ -110,7 +110,7 @@ async function loadProductsInBatches() {
         image: data.media?.mainMedia?.image?.url || data.imagen_url || data.image_url || '',
         description: data.description || '',
         productPageUrl: data.productPageUrl?.base && data.productPageUrl?.path
-          ? `${data.productPageUrl.base}${data.productPageUrl.path}`
+          ? `${data.productPageUrl.base.replace(/\/$/, '')}${data.productPageUrl.path}`
           : ''
       };
     });
