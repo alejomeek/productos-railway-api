@@ -107,7 +107,7 @@ async function loadProductsInBatches() {
         price: data.price || 0,
         sku: data.sku || '',
         stock: data.stock_quantity || 0,
-        image: data.image_url || '',
+        image: data.media?.mainMedia?.image?.url || data.imagen_url || data.image_url || '',
         description: data.description || ''
       };
     });
