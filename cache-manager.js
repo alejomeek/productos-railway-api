@@ -108,7 +108,10 @@ async function loadProductsInBatches() {
         sku: data.sku || '',
         stock: data.stock?.quantity || data.inventory || 0,
         image: data.media?.mainMedia?.image?.url || data.imagen_url || data.image_url || '',
-        description: data.description || ''
+        description: data.description || '',
+        productPageUrl: data.productPageUrl?.base && data.productPageUrl?.path
+          ? `${data.productPageUrl.base}${data.productPageUrl.path}`
+          : ''
       };
     });
 
