@@ -63,11 +63,11 @@ async function performSearch(query, topK = 20, threshold = 0.3) {
 
   const totalTime = Date.now() - startTime;
 
-  console.log(`= Búsqueda: "${query}"`);
-  console.log(`  ’ Embedding: ${embeddingTime}ms`);
-  console.log(`  ’ Similitud: ${searchTime}ms`);
-  console.log(`  ’ Total: ${totalTime}ms`);
-  console.log(`  ’ Resultados: ${results.length}`);
+  console.log(`[SEARCH] Busqueda: "${query}"`);
+  console.log(`  -> Embedding: ${embeddingTime}ms`);
+  console.log(`  -> Similitud: ${searchTime}ms`);
+  console.log(`  -> Total: ${totalTime}ms`);
+  console.log(`  -> Resultados: ${results.length}`);
 
   return {
     results,

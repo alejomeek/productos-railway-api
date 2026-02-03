@@ -15,20 +15,20 @@ let cacheReady = false;
 
 // Inicializar cache al arrancar
 (async () => {
-  console.log('=€ Iniciando servidor...');
+  console.log('[START] Iniciando servidor...');
   try {
     await initializeCache();
     cacheReady = true;
-    console.log(' Servidor listo para búsquedas');
+    console.log('[OK] Servidor listo para busquedas');
   } catch (error) {
-    console.error('L Error inicializando cache:', error);
+    console.error('[ERROR] Error inicializando cache:', error);
     process.exit(1);
   }
 })();
 
-// Refresh automático semanal (Domingos 3 AM)
+// Refresh automatico semanal (Domingos 3 AM)
 cron.schedule('0 3 * * 0', async () => {
-  console.log('= Refresh semanal automático iniciado');
+  console.log('[REFRESH] Refresh semanal automatico iniciado');
   cacheReady = false;
   await initializeCache();
   cacheReady = true;
@@ -44,11 +44,11 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Endpoint principal de búsqueda
+// Endpoint principal de busqueda
 app.post('/api/search', async (req, res) => {
   if (!cacheReady) {
     return res.status(503).json({
-      error: 'Cache aún no está listo, intenta en unos segundos'
+      error: 'Cache aun no esta listo, intenta en unos segundos'
     });
   }
 
@@ -71,7 +71,7 @@ app.post('/api/search', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('L Error en búsqueda:', error);
+    console.error('[ERROR] Error en busqueda:', error);
     res.status(500).json({
       error: 'Error interno del servidor',
       message: error.message
@@ -82,7 +82,7 @@ app.post('/api/search', async (req, res) => {
 // Endpoint para refrescar cache (llamado por master-database)
 app.post('/api/refresh-cache', async (req, res) => {
   try {
-    console.log('= Refresh manual solicitado');
+    console.log('[REFRESH] Refresh manual solicitado');
     cacheReady = false;
     await initializeCache();
     cacheReady = true;
@@ -92,18 +92,18 @@ app.post('/api/refresh-cache', async (req, res) => {
       stats: getCacheStats()
     });
   } catch (error) {
-    console.error('L Error refrescando cache:', error);
+    console.error('[ERROR] Error refrescando cache:', error);
     cacheReady = true; // Volver a estado anterior
     res.status(500).json({ error: error.message });
   }
 });
 
-// Estadísticas del cache
+// Estadisticas del cache
 app.get('/api/stats', (req, res) => {
   res.json(getCacheStats());
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`=€ Servidor escuchando en puerto ${PORT}`);
+  console.log(`[START] Servidor escuchando en puerto ${PORT}`);
 });

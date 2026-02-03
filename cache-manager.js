@@ -17,13 +17,13 @@ function initFirebase() {
 }
 
 async function initializeCache() {
-  console.log('=å Iniciando carga de datos desde Firebase...');
+  console.log('[LOADING] Iniciando carga de datos desde Firebase...');
   const startTime = Date.now();
 
   if (!db) initFirebase();
 
   // Cargar embeddings
-  console.log('  ’ Cargando embeddings...');
+  console.log('  -> Cargando embeddings...');
   const embeddingsSnapshot = await db.collection('productos_embeddings').get();
 
   EMBEDDINGS_CACHE = embeddingsSnapshot.docs.map(doc => {
@@ -35,10 +35,10 @@ async function initializeCache() {
     };
   });
 
-  console.log(`   ${EMBEDDINGS_CACHE.length} embeddings cargados`);
+  console.log(`  [OK] ${EMBEDDINGS_CACHE.length} embeddings cargados`);
 
   // Cargar productos
-  console.log('  ’ Cargando productos...');
+  console.log('  -> Cargando productos...');
   const productsSnapshot = await db.collection('productos').get();
 
   PRODUCTS_CACHE = {};
@@ -55,15 +55,15 @@ async function initializeCache() {
     };
   });
 
-  console.log(`   ${Object.keys(PRODUCTS_CACHE).length} productos cargados`);
+  console.log(`  [OK] ${Object.keys(PRODUCTS_CACHE).length} productos cargados`);
 
   CACHE_TIMESTAMP = new Date();
 
   const duration = Date.now() - startTime;
   const memUsage = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
 
-  console.log(` Cache inicializado en ${duration}ms`);
-  console.log(`=¾ Memoria usada: ${memUsage}MB`);
+  console.log(`[OK] Cache inicializado en ${duration}ms`);
+  console.log(`[MEM] Memoria usada: ${memUsage}MB`);
 }
 
 function getCachedData() {
