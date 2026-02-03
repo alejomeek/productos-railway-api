@@ -106,7 +106,7 @@ async function loadProductsInBatches() {
         name: data.name || '',
         price: data.price || 0,
         sku: data.sku || '',
-        stock: data.stock_quantity || 0,
+        stock: data.stock?.quantity || data.inventory || 0,
         image: data.media?.mainMedia?.image?.url || data.imagen_url || data.image_url || '',
         description: data.description || ''
       };
