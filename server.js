@@ -80,22 +80,27 @@ app.post('/api/search', async (req, res) => {
 });
 
 // Endpoint para refrescar cache (llamado por master-database)
-app.post('/api/refresh-cache', async (req, res) => {
-  try {
-    console.log('[REFRESH] Refresh manual solicitado');
-    cacheReady = false;
-    await initializeCache();
-    cacheReady = true;
-    res.json({
-      success: true,
-      message: 'Cache refrescado exitosamente',
-      stats: getCacheStats()
-    });
-  } catch (error) {
-    console.error('[ERROR] Error refrescando cache:', error);
-    cacheReady = true; // Volver a estado anterior
-    res.status(500).json({ error: error.message });
-  }
+app.post('/api/refresh-cache', (req, res) => {
+  console.log('[REFRESH] Refresh manual solicitado');
+
+  // No esperamos a que termine, lo ejecutamos en segundo plano
+  (async () => {
+    try {
+      cacheReady = false;
+      await initializeCache();
+      cacheReady = true;
+      console.log('[REFRESH] Operación en segundo plano completada con éxito');
+    } catch (error) {
+      console.error('[ERROR] Error refrescando cache en segundo plano:', error);
+      cacheReady = true; // Volver a estado anterior si falla
+    }
+  })();
+
+  res.json({
+    success: true,
+    message: 'Proceso de refresh en segundo plano iniciado. Toma algunos minutos en completarse.',
+    stats: getCacheStats()
+  });
 });
 
 // Estadisticas del cache
